@@ -1,5 +1,6 @@
-#include "naive_dictionary.hpp"
+  #include "naive_dictionary.hpp"
 #include "tools.hpp"
+#include <iostream>
 
 
 
@@ -18,20 +19,30 @@ void naive_dictionary::init(const std::vector<std::string>& word_list)
 result_t naive_dictionary::search(const std::string& query) const
 {
   std::lock_guard l(m);
+  std::vector<std::string> v(m_set.begin(), m_set.end());
+  std::cout << "here" << std::endl;
 
-  std::string best;
-  int distance = std::numeric_limits<int>::max();
-  for (const auto& word : m_set)
-  {
-    int d = levenshtein(query, word);
-    if (d < distance)
-    {
-      best = word;
-      distance = d;
+  size_t begin = 0;
+  size_t end = v.size() - 1;
+
+  int b_levenshtein = levenshtein(query, v.at(begin));
+  int e_levenshtein = levenshtein(query, v.at(end));
+
+  while(begin + 1 < end) {
+    if(b_levenshtein >= e_levenshtein) {
+      end = begin + (end - begin) / 2 ;
+      e_levenshtein = levenshtein(query, v.at(end));
+    }
+    else {
+      begin = begin + (end - begin) / 2 ;
+      b_levenshtein = levenshtein(query, v.at(begin));
     }
   }
 
-  return {best, distance};
+  if(e_levenshtein < b_levenshtein)
+    return {v.at(end), e_levenshtein};
+  else
+    return {v.at(begin), b_levenshtein};
 }
 
 
